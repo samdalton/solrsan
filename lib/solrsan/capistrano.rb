@@ -17,5 +17,10 @@ Capistrano::Configuration.instance(:must_exist).load do
       run "cd #{current_path} && rake solr:clear_index RAILS_ENV=#{stage}"
       run "cd #{current_path} && rake solr:index RAILS_ENV=#{stage}"
     end
+    
+    desc "re-index without clearing"
+    task :index, :roles => :search do
+      run "cd #{current_path} && rake solr:index RAILS_ENV=#{stage}"      
+    end
   end
 end
