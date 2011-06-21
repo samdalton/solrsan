@@ -21,12 +21,11 @@ module Solrsan
 
         start = search_params[:start] || 0
         rows = search_params[:rows] || 20
-        qt = (search_params[:qt] or 'select')
 
         solr_params = parse_params_for_solr(search_params)
 
         begin
-          solr_response = @rsolr.paginate(start, rows, qt, :params => solr_params)
+          solr_response = @rsolr.paginate(start, rows, 'select', :params => solr_params)
           parse_solr_response(solr_response)
         rescue RSolr::Error::Http => e
           {:docs => [], 
@@ -48,10 +47,11 @@ module Solrsan
         solr_params
       end
 
-      def parse_solr_response(solr_response)
+    def parse_solr_response(solr_response)
         docs = solr_response['response']['docs']
         parsed_facet_counts = parse_facet_counts(solr_response['facet_counts'])
         highlighting = solr_response['highlighting']
+        suggestions = solr_response['spellcheck']['suggestions'] rescue {}
 
         metadata = {
           :total_count => solr_response['response']['numFound'],
@@ -65,10 +65,11 @@ module Solrsan
         response = {:docs => docs, :metadata =>  metadata,
          :facet_counts => parsed_facet_counts, :highlighting => highlighting}
         response[:stats] = solr_response['stats'] if solr_response['stats']
+        response[:suggestions] = suggestions
 
         embed_highlighting(response)
       end
-
+     
       def parse_fq(fq)
         return [] if fq.nil?
         if fq.is_a?(Hash)
