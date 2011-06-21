@@ -22,5 +22,10 @@ Capistrano::Configuration.instance(:must_exist).load do
     task :index, :roles => :search do
       run "cd #{current_path} && rake solr:index RAILS_ENV=#{stage}"      
     end
+
+    desc "build spelling dictionary"
+    task :build_dictionary, :roles => :search do
+        run "cd #{current_path} && rake solr:build_dictionary RAILS_ENV=#{stage}"
+    end
   end
 end

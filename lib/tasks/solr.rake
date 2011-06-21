@@ -1,5 +1,6 @@
 require 'uri'
 require 'yaml'
+require 'open-uri'
 
 namespace :solr do
   env =  "development"
@@ -40,6 +41,11 @@ namespace :solr do
   task(:stop) do
     cmd = kill_matching_process_cmd(jetty_port_opt)
     run_system_command(cmd)
+  end
+
+  desc "update spelling dictionary"
+  task :build_dictionary do
+    open("#{solr_server_url}/select?q=facebok&qt=spell&spellcheck.build=true")
   end
 
   def run_system_command(cmd)
