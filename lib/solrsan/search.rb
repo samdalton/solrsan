@@ -21,11 +21,12 @@ module Solrsan
 
         start = search_params[:start] || 0
         rows = search_params[:rows] || 20
+        qt = (search_params[:qt] or 'select')
 
         solr_params = parse_params_for_solr(search_params)
 
         begin
-          solr_response = @rsolr.paginate(start, rows, 'select', :params => solr_params)
+          solr_response = @rsolr.paginate(start, rows, qt, :params => solr_params)
           parse_solr_response(solr_response)
         rescue RSolr::Error::Http => e
           {:docs => [], 
