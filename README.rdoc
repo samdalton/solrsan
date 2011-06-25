@@ -12,7 +12,7 @@ I made a few test cases for further examples at http://github.com/tc/solrsan/tre
 === HOWTO
 Install Jetty
 
-  wget http://download.eclipse.org/jetty/stable-7/dist/jetty-distribution-7.3.0.v20110203.tar.gz
+  wget http://download.eclipse.org/jetty/7.3.0.v20110203/dist/jetty-distribution-7.3.0.v20110203.tar.gz
   tar -zxvf jetty-distribution-*.tar.gz
   rm jetty-distribution-*.tar.gz
   mv jetty-distribution-* /usr/local
