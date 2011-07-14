@@ -6,13 +6,13 @@ Gem::Specification.new do |s|
   s.name        = "solrsan"
   s.version     = Solrsan::VERSION
   s.platform    = Gem::Platform::RUBY
-  s.authors     = ["Tommy Chheng"]
-  s.email       = ["tommy.chheng@gmail.com"]
+  s.authors     = ["Tommy Chheng", "Sam Dalton"]
+  s.email       = ["tommy.chheng@gmail.com", "sam@quid.com"]
   s.homepage    = "http://github.com/tc/solrsan"
   s.summary = %q{Lightweight wrapper for using Apache Solr within a Ruby application including Rails and Sinatra.}
   s.description = %q{solrsan is a lightweight wrapper for using Apache Solr within a Ruby application including Rails and Sinatra.}
 
-  s.add_dependency('rsolr', '~>1.0.0')
+  s.add_dependency('rsolr', '1.0.0')
   s.add_dependency('activemodel')
   s.add_dependency('activesupport')
   
