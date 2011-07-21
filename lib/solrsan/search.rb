@@ -13,7 +13,7 @@ module Solrsan
       end
 
       def solr
-        @rsolr ||= Solrsan::Config.instance.rsolr_object(@solr_server)
+         Solrsan::Config.instance.rsolr_object(@solr_server)
       end
         
       def perform_solr_command

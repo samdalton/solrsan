@@ -2,232 +2,250 @@ require 'test_helper'
 require 'search_test_helper'
 
 class SearchTest < Test::Unit::TestCase
-  include SearchTestHelper
+    include SearchTestHelper
 
-  def setup
-    Document.destroy_all_index_documents!
-    @document = document_mock
-  end
-  
-  def teardown
-    Document.destroy_all_index_documents!
-  end
+    def setup
+        Document.destroy_all_index_documents!
+        @document = document_mock
+    end
 
-  def test_simple_query
-    Document.index(@document)
-    q = @document.attributes[:title]
+    def teardown
+        Document.destroy_all_index_documents!
+    end
 
-    response = Document.search(:q => q)
-    metadata = response[:metadata]
-    docs = response[:docs]
-    assert metadata[:total_count] > 0
-  end
+    def test_simple_query
+        Document.index(@document)
+        q = @document.attributes[:title]
 
-  def test_sort
-    Document.index(Document.new(:id => 3, :title => "solar city",:review_count => 10))
-    Document.index(Document.new(:id => 4, :title => "city solar", :review_count => 5))
+        response = Document.search(:q => q)
+        metadata = response[:metadata]
+        docs = response[:docs]
+        assert metadata[:total_count] > 0
+    end
 
-    q = "solar"
-    response = Document.search(:q => q, :sort => "review_count asc")
-    docs = response[:docs]
+    def test_sort
+        Document.index(Document.new(:id => 3, :title => "solar city",:review_count => 10))
+        Document.index(Document.new(:id => 4, :title => "city solar", :review_count => 5))
 
-    assert_not_nil docs[0], "Not enough docs for #{q} to test."
-    first_result_name = docs[0][:title]
-    assert_not_nil docs[1], "Not enough docs for #{q} to test."
-    second_result_name = docs[1][:title]
+        q = "solar"
+        response = Document.search(:q => q, :sort => "review_count asc")
+        docs = response[:docs]
 
-    assert_equal [second_result_name, first_result_name].sort, [first_result_name, second_result_name]
+        assert_not_nil docs[0], "Not enough docs for #{q} to test."
+        first_result_name = docs[0][:title]
+        assert_not_nil docs[1], "Not enough docs for #{q} to test."
+        second_result_name = docs[1][:title]
 
-    response = Document.search(:q => q, :sort => "review_count desc")
-    docs = response[:docs]
+        assert_equal [second_result_name, first_result_name].sort, [first_result_name, second_result_name]
 
-    assert_not_nil docs[0], "Not enough docs for #{q} to test."
-    first_result_name = docs[0][:title]
-    assert_not_nil docs[1], "Not enough docs for #{q} to test."
-    second_result_name = docs[1][:title]
+        response = Document.search(:q => q, :sort => "review_count desc")
+        docs = response[:docs]
 
-    assert_equal [second_result_name, first_result_name].sort.reverse, [first_result_name, second_result_name]
-  end
-  
-  def test_invalid_query_should_return_error_message_in_metadata
-    response = Document.search(:q => "http://tommy.chheng.com")
-    docs = response[:docs]
-    metadata = response[:metadata]
+        assert_not_nil docs[0], "Not enough docs for #{q} to test."
+        first_result_name = docs[0][:title]
+        assert_not_nil docs[1], "Not enough docs for #{q} to test."
+        second_result_name = docs[1][:title]
 
-    assert_not_nil response[:metadata][:error]
-    assert_equal 400, response[:metadata][:error][:http_status_code]
-  end
+        assert_equal [second_result_name, first_result_name].sort.reverse, [first_result_name, second_result_name]
+    end
 
-  def test_parse_facet_fields
-    facet_counts = {'facet_queries'=>{},
-      'facet_fields' => {'language' => ["Scala", 2, "Ruby", 1, "Java", 0]},
-      'facet_dates'=>{}}
-    
-    facet_counts = Document.parse_facet_counts(facet_counts)
-    
-    assert_equal ["Scala", "Ruby", "Java"], facet_counts['facet_fields']['language'].keys
-  end
+    def test_invalid_query_should_return_error_message_in_metadata
+        response = Document.search(:q => "http://tommy.chheng.com")
+        docs = response[:docs]
+        metadata = response[:metadata]
 
-  def test_parse_facet_queries
-    facet_counts = {"facet_queries"=>{"funding:[0 TO 5000000]"=>1, "funding:[10000000 TO 50000000]"=>0}, "facet_fields"=>{}, "facet_dates"=>{}}
+        assert_not_nil response[:metadata][:error]
+        assert_equal 400, response[:metadata][:error][:http_status_code]
+    end
 
-    facet_counts = Document.parse_facet_counts(facet_counts)
+    def test_parse_facet_fields
+        facet_counts = {'facet_queries'=>{},
+            'facet_fields' => {'language' => ["Scala", 2, "Ruby", 1, "Java", 0]},
+            'facet_dates'=>{}}
 
-    expected = {"funding"=>{"[0 TO 5000000]"=>1, "[10000000 TO 50000000]"=>0}}
-    assert_equal expected, facet_counts['facet_queries']
-  end
-  
-  def test_parse_fq_with_hash
-    params = {:fq => {:tags => ["ruby", "scala"]}}
-    filters = Document.parse_fq(params[:fq])
+        facet_counts = Document.parse_facet_counts(facet_counts)
 
-    expected = ["tags:\"ruby\"", "tags:\"scala\""]
-    assert_equal expected, filters
-  end
+        assert_equal ["Scala", "Ruby", "Java"], facet_counts['facet_fields']['language'].keys
+    end
 
-  def test_parse_fq_with_hash_multiple_entries
-    params = {:fq => {:tags => ["ruby", "scala"], :author => "Bert"}}
-    filters = Document.parse_fq(params[:fq])
+    def test_parse_facet_queries
+        facet_counts = {"facet_queries"=>{"funding:[0 TO 5000000]"=>1, "funding:[10000000 TO 50000000]"=>0}, "facet_fields"=>{}, "facet_dates"=>{}}
 
-    expected = ["tags:\"ruby\"", "tags:\"scala\"", "author:\"Bert\""]
-    assert_equal expected, filters
-  end
+        facet_counts = Document.parse_facet_counts(facet_counts)
 
-  def test_parse_fq_with_hash_array_args
-    params = {:fq => [{:tags => ["ruby", "scala"]}]}
-    filters = Document.parse_fq(params[:fq])
+        expected = {"funding"=>{"[0 TO 5000000]"=>1, "[10000000 TO 50000000]"=>0}}
+        assert_equal expected, facet_counts['facet_queries']
+    end
 
-    expected = ["tags:\"ruby\"", "tags:\"scala\""]
-    assert_equal expected, filters
-  end
+    def test_parse_fq_with_hash
+        params = {:fq => {:tags => ["ruby", "scala"]}}
+        filters = Document.parse_fq(params[:fq])
 
-  def test_parse_fq_with_hash_string_args
-    params = {:fq => [{:tags => "ruby"}]}
-    filters = Document.parse_fq(params[:fq])
+        expected = ["tags:\"ruby\"", "tags:\"scala\""]
+        assert_equal expected, filters
+    end
 
-    expected = ["tags:\"ruby\""]
-    assert_equal expected, filters
-  end
+    def test_parse_fq_with_hash_multiple_entries
+        params = {:fq => {:tags => ["ruby", "scala"], :author => "Bert"}}
+        filters = Document.parse_fq(params[:fq])
 
-  def test_parse_fq_with_string_args
-    params = {:fq => ["tags:ruby"]}
-    filters = Document.parse_fq(params[:fq])
+        expected = ["tags:\"ruby\"", "tags:\"scala\"", "author:\"Bert\""]
+        assert_equal expected, filters
+    end
 
-    expected = ["tags:ruby"]
-    assert_equal expected, filters
-  end
+    def test_parse_fq_with_hash_array_args
+        params = {:fq => [{:tags => ["ruby", "scala"]}]}
+        filters = Document.parse_fq(params[:fq])
 
-  def test_parse_fq_with_empty
-    filters = Document.parse_fq([])
-    expected = []
-    assert_equal expected, filters
-  end
+        expected = ["tags:\"ruby\"", "tags:\"scala\""]
+        assert_equal expected, filters
+    end
+
+    def test_parse_fq_with_hash_string_args
+        params = {:fq => [{:tags => "ruby"}]}
+        filters = Document.parse_fq(params[:fq])
+
+        expected = ["tags:\"ruby\""]
+        assert_equal expected, filters
+    end
+
+    def test_parse_fq_with_string_args
+        params = {:fq => ["tags:ruby"]}
+        filters = Document.parse_fq(params[:fq])
+
+        expected = ["tags:ruby"]
+        assert_equal expected, filters
+    end
+
+    def test_parse_fq_with_empty
+        filters = Document.parse_fq([])
+        expected = []
+        assert_equal expected, filters
+    end
 
 
-  def test_filter_query_mulitple_filters
-    Document.index(Document.new(:id => 3, :author => "Bert", :title => "solr lucene",:review_count => 10, :tags => ['ruby']))
-    Document.index(Document.new(:id => 4, :author => "Ernie", :title => "lucene solr", :review_count => 5, :tags => ['ruby', 'scala']))
-    
-    response = Document.search(:q => "solr", :fq => {:tags => ["scala"], :author => "Ernie"})
-    docs = response[:docs]
-    metadata = response[:metadata]
+    def test_filter_query_mulitple_filters
+        Document.index(Document.new(:id => 3, :author => "Bert", :title => "solr lucene",:review_count => 10, :tags => ['ruby']))
+        Document.index(Document.new(:id => 4, :author => "Ernie", :title => "lucene solr", :review_count => 5, :tags => ['ruby', 'scala']))
 
-    assert_equal 1, metadata[:total_count]
+        response = Document.search(:q => "solr", :fq => {:tags => ["scala"], :author => "Ernie"})
+        docs = response[:docs]
+        metadata = response[:metadata]
 
-    doc = docs.first
-    assert_not_nil doc['tags']
-    assert doc['tags'].include?("scala")
-  end
+        assert_equal 1, metadata[:total_count]
 
-  def test_filter_query
-    Document.index(Document.new(:id => 3, :author => "Bert", :title => "solr lucene",:review_count => 10, :tags => ['ruby']))
-    Document.index(Document.new(:id => 4, :author => "Ernie", :title => "lucene solr", :review_count => 5, :tags => ['ruby', 'scala']))
-    
-    response = Document.search(:q => "solr", :fq => [{:tags => ["scala"]}])
-    docs = response[:docs]
-    metadata = response[:metadata]
+        doc = docs.first
+        assert_not_nil doc['tags']
+        assert doc['tags'].include?("scala")
+    end
 
-    assert_equal 1, metadata[:total_count]
+    def test_filter_query
+        Document.index(Document.new(:id => 3, :author => "Bert", :title => "solr lucene",:review_count => 10, :tags => ['ruby']))
+        Document.index(Document.new(:id => 4, :author => "Ernie", :title => "lucene solr", :review_count => 5, :tags => ['ruby', 'scala']))
 
-    doc = docs.first
-    assert_not_nil doc['tags']
-    assert doc['tags'].include?("scala")
-  end
+        response = Document.search(:q => "solr", :fq => [{:tags => ["scala"]}])
+        docs = response[:docs]
+        metadata = response[:metadata]
 
-  def test_text_faceting
-    Document.index(Document.new(:id => 3, :author => "Bert", :title => "solr lucene",:review_count => 10))
-    Document.index(Document.new(:id => 4, :author => "Ernie", :title => "lucene solr", :review_count => 5))
-    
-    response = Document.search(:q => "solr", :'facet.field' => ['author'])
-    docs = response[:docs]
-    facet_counts = response[:facet_counts]
-    assert_not_nil facet_counts["facet_fields"]["author"]
+        assert_equal 1, metadata[:total_count]
 
-    author_facet_entries = facet_counts["facet_fields"]["author"]
-    assert author_facet_entries.keys.include?("Bert") && author_facet_entries.keys.include?("Ernie")
-  end
+        doc = docs.first
+        assert_not_nil doc['tags']
+        assert doc['tags'].include?("scala")
+    end
 
-  def test_range_faceting
-    Document.index(Document.new(:id => 3, :author => "Bert", :title => "solr lucene",:review_count => 10))
-    Document.index(Document.new(:id => 4, :author => "Ernie", :title => "lucene solr", :review_count => 5))
-    
-    response = Document.search(:q => "solr", :'facet.field' => ['author'], :'facet.query' => ["review_count:[1 TO 5]", "review_count:[6 TO 10]"])
-    docs = response[:docs]
-    facet_counts = response[:facet_counts]
+    def test_text_faceting
+        Document.index(Document.new(:id => 3, :author => "Bert", :title => "solr lucene",:review_count => 10))
+        Document.index(Document.new(:id => 4, :author => "Ernie", :title => "lucene solr", :review_count => 5))
 
-    assert_not_nil facet_counts["facet_fields"]["author"]
-    assert_not_nil facet_counts["facet_queries"]["review_count"]
-    assert_equal({"[1 TO 5]"=>1, "[6 TO 10]"=>1}, facet_counts["facet_queries"]["review_count"])
-  end
+        response = Document.search(:q => "solr", :'facet.field' => ['author'])
+        docs = response[:docs]
+        facet_counts = response[:facet_counts]
+        assert_not_nil facet_counts["facet_fields"]["author"]
 
-  def test_highlighting_support
-    Document.index(Document.new(:id => 3, :author => "Bert", :title => "solr lucene",:review_count => 10, :tags => ["solr"]))
+        author_facet_entries = facet_counts["facet_fields"]["author"]
+        assert author_facet_entries.keys.include?("Bert") && author_facet_entries.keys.include?("Ernie")
+    end
 
-    response = Document.search(:q => "solr", 
-                               :'hl.fl' => "*")
-    docs = response[:docs]
-    highlighting = response[:highlighting]
+    def test_range_faceting
+        Document.index(Document.new(:id => 3, :author => "Bert", :title => "solr lucene",:review_count => 10))
+        Document.index(Document.new(:id => 4, :author => "Ernie", :title => "lucene solr", :review_count => 5))
 
-    first_result = highlighting.first
-    assert first_result[1]['tags'].include?("<mark>solr</mark>")
-  end
+        response = Document.search(:q => "solr", :'facet.field' => ['author'], :'facet.query' => ["review_count:[1 TO 5]", "review_count:[6 TO 10]"])
+        docs = response[:docs]
+        facet_counts = response[:facet_counts]
 
-  def test_embed_highlighting
-    Document.index(Document.new(:id => 3, :author => "Bert", :title => "solr lucene",:review_count => 10, :tags => ["solr", "sphinx"]))
+        assert_not_nil facet_counts["facet_fields"]["author"]
+        assert_not_nil facet_counts["facet_queries"]["review_count"]
+        assert_equal({"[1 TO 5]"=>1, "[6 TO 10]"=>1}, facet_counts["facet_queries"]["review_count"])
+    end
 
-    response = Document.search(:q => "solr", 
-                               :'hl.fl' => "*")
-    docs = response[:docs]
-    assert_equal ["<mark>solr</mark>","sphinx"], docs.first['tags']
-  end
+    def test_highlighting_support
+        Document.index(Document.new(:id => 3, :author => "Bert", :title => "solr lucene",:review_count => 10, :tags => ["solr"]))
 
-  def test_debug_response
-    Document.index(@document)
-    q = @document.attributes[:title]
+        response = Document.search(:q => "solr", 
+                                   :'hl.fl' => "*")
+        docs = response[:docs]
+        highlighting = response[:highlighting]
 
-    response = Document.search({:q => q, :debugQuery => true})
-    metadata = response[:metadata]
-    assert_not_nil metadata[:debug]
-  end
+        first_result = highlighting.first
+        assert first_result[1]['tags'].include?("<mark>solr</mark>")
+    end
 
-  def test_stats_response
-    Document.index(@document)
-    q = @document.attributes[:title]
+    def test_embed_highlighting
+        Document.index(Document.new(:id => 3, :author => "Bert", :title => "solr lucene",:review_count => 10, :tags => ["solr", "sphinx"]))
 
-    response = Document.search({:q => q, :stats => true, :'stats.field' => 'review_count'})
-    assert_not_nil response[:stats]
-    assert_equal 1, response[:stats]['stats_fields']['review_count']['count']
-  end
+        response = Document.search(:q => "solr", 
+                                   :'hl.fl' => "*")
+        docs = response[:docs]
+        assert_equal ["<mark>solr</mark>","sphinx"], docs.first['tags']
+    end
 
-  def test_will_paginate_support
-    Document.index(Document.new(:id => 3, :author => "Bert", :title => "solr lucene",:review_count => 10))
-    Document.index(Document.new(:id => 4, :author => "Ernie", :title => "lucene solr", :review_count => 5))
-    
-    response = Document.search(:q => "solr")
-    docs = response[:docs]
-    assert_not_nil docs.start
-    assert_not_nil docs.per_page
-    assert_not_nil docs.current_page
-  end
+    def test_debug_response
+        Document.index(@document)
+        q = @document.attributes[:title]
+
+        response = Document.search({:q => q, :debugQuery => true})
+        metadata = response[:metadata]
+        assert_not_nil metadata[:debug]
+    end
+
+    def test_stats_response
+        Document.index(@document)
+        q = @document.attributes[:title]
+
+        response = Document.search({:q => q, :stats => true, :'stats.field' => 'review_count'})
+        assert_not_nil response[:stats]
+        assert_equal 1, response[:stats]['stats_fields']['review_count']['count']
+    end
+
+    def test_will_paginate_support
+        Document.index(Document.new(:id => 3, :author => "Bert", :title => "solr lucene",:review_count => 10))
+        Document.index(Document.new(:id => 4, :author => "Ernie", :title => "lucene solr", :review_count => 5))
+
+        response = Document.search(:q => "solr")
+        docs = response[:docs]
+        assert_not_nil docs.start
+        assert_not_nil docs.per_page
+        assert_not_nil docs.current_page
+    end
+
+    def test_solr_server_attribute_writable
+        begin
+            Document.solr_server = :example
+            assert_equal :example, Document.solr_server        
+        ensure
+            Document.solr_server = nil
+        end
+    end
+
+    def test_rsolr_is_configured_with_the_set_solr_server
+        begin
+            Document.solr_server = :example
+            assert_equal "example.com/", Document.solr.options[:url]
+        ensure
+            Document.solr_server = nil
+        end
+    end
 end
 

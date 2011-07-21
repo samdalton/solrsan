@@ -6,10 +6,14 @@ module Solrsan
 
         def initialize
             @solr_server_urls = {}
+            @solr_servers = {}
         end
 
-        def rsolr_object(key = false)
-            @rsolr = RSolr.connect :url => get_server_url(key)
+        def rsolr_object(key = :default)
+            unless @solr_servers[key]
+                @solr_servers[key] = RSolr.connect :url => get_server_url(key)
+            end
+            @solr_servers[key]
         end
 
         def add_server_url(url, key)
