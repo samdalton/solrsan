@@ -46,7 +46,7 @@ module Solrsan
           :'facet.mincount' => 1}.merge(search_params)
 
         solr_params[:hl] = true unless search_params[:'hl.fl'].blank?
-        solr_params[:fq] = ["type:#{class_name}"] + parse_fq(search_params[:fq])
+        solr_params[:fq] =  parse_fq(search_params[:fq]) + (if search_params[:untyped] ? [] : ["type:#{class_name}"])
         solr_params
       end
 
