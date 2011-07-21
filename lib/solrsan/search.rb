@@ -9,23 +9,24 @@ module Solrsan
       def class_name
         to_s.underscore
       end
+
+      def solr
+        @rsolr ||= Solrsan::Config.instance.rsolr_object
+      end
         
       def perform_solr_command
-        @rsolr = Solrsan::Config.instance.rsolr_object
-        yield(@rsolr)
-        @rsolr.commit
+        yield(solr)
+        solr.commit
       end
 
       def search(search_params={})
-        @rsolr ||= Solrsan::Config.instance.rsolr_object
-
         start = search_params[:start] || 0
         rows = search_params[:rows] || 20
 
         solr_params = parse_params_for_solr(search_params)
 
         begin
-          solr_response = @rsolr.paginate(start, rows, 'select', :params => solr_params)
+          solr_response = solr.paginate(start, rows, 'select', :params => solr_params)
           parse_solr_response(solr_response)
         rescue RSolr::Error::Http => e
           {:docs => [], 
