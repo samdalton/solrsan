@@ -21,7 +21,7 @@ module Solrsan
         end
 
         def get_server_url(key)
-            @solr_server_urls[key] || @solr_server_url
+            @solr_server_urls[key] || @solr_server_urls[:default] || @solr_server_url
         end
     end
 end

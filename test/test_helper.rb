@@ -21,5 +21,5 @@ require 'document'
 solr_config = YAML::load( File.open( File.join(File.dirname(__FILE__), "..", "config", "solr.yml") ) )
 solr_server_url = solr_config["test"]['solr_server_url']
 
-Solrsan::Config.instance.solr_server_url = solr_server_url
 Solrsan::Config.instance.add_server_url('example.com', :example)
+Solrsan::Config.instance.add_server_url(solr_server_url, :default)
