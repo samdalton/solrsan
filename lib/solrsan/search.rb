@@ -3,6 +3,8 @@ module Solrsan
     extend ActiveSupport::Concern
     module ClassMethods
 
+      attr_accessor :solr_server
+
       HL_START_TAG = "<mark>"
       HL_END_TAG = "</mark>"
 
@@ -11,7 +13,7 @@ module Solrsan
       end
 
       def solr
-        @rsolr ||= Solrsan::Config.instance.rsolr_object
+        @rsolr ||= Solrsan::Config.instance.rsolr_object(@solr_server)
       end
         
       def perform_solr_command
