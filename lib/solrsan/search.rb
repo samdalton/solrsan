@@ -19,7 +19,7 @@ module Solrsan
         
       def perform_solr_command(method = :read)
         yield(solr(method))
-        solr.commit
+        solr(method).commit
       end
 
       def search(search_params={})
