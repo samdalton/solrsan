@@ -1,27 +1,23 @@
 module Solrsan
     class Config
         include Singleton
-        attr_accessor  :solr_server_url
-        attr_accessor :solr_server_urls
 
         def initialize
-            @solr_server_urls = {}
-            @solr_servers = {}
+            @server_urls = { :write => {}, :read => {} }
+            @solr_servers = { :write => {}, :read => {} }
         end
 
-        def rsolr_object(key = :default)
-            unless @solr_servers[key]
-                @solr_servers[key] = RSolr.connect :url => get_server_url(key)
+        def rsolr_object(namesapce = :default, method = :read)
+            unless @solr_servers[method][namesapce]
+                @solr_servers[method][namesapce] = RSolr.connect :url => @server_urls[method][namespace]
             end
-            @solr_servers[key]
+            @solr_servers[method][namesapce]
         end
 
-        def add_server_url(url, key)
-            @solr_server_urls[key] = url
-        end
+        def add_server(namespace, url, method)
 
-        def get_server_url(key)
-            @solr_server_urls[key] || @solr_server_urls[:default] || @solr_server_url
+            @server_urls[method][namespace] = url
+          
         end
     end
 end
