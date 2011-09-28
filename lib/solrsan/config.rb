@@ -7,11 +7,13 @@ module Solrsan
             @solr_servers = { :write => {}, :read => {} }
         end
 
-        def rsolr_object(namesapce = :default, method = :read)
-            unless @solr_servers[method][namesapce]
-                @solr_servers[method][namesapce] = RSolr.connect :url => @server_urls[method][namespace]
+        def rsolr_object(namespace = :default, method = :read)
+
+            unless @solr_servers[method][namespace]
+                @solr_servers[method][namespace] = RSolr.connect :url => @server_urls[method][namespace]
             end
-            @solr_servers[method][namesapce]
+            @solr_servers[method][namespace]
+
         end
 
         def add_server(namespace, url, method)

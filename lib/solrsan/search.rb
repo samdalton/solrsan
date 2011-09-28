@@ -13,6 +13,7 @@ module Solrsan
       end
 
       def solr(method = :read)
+          @solr_server ||= :default
          Solrsan::Config.instance.rsolr_object(@solr_server, method)
       end
         
