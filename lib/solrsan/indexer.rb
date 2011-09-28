@@ -52,7 +52,7 @@ module Solrsan
         else
           raise "Indexed document must define a as_solr_document method."
         end
-        self.perform_solr_command do |rsolr|
+        self.perform_solr_command(:write) do |rsolr|
           rsolr.add(solr_docs)
         end
       end
@@ -65,7 +65,7 @@ module Solrsan
 
       def destroy_index_document(doc)
         if doc.respond_to?(:solr_id_value)
-          self.perform_solr_command do |rsolr|
+          self.perform_solr_command(:write) do |rsolr|
             rsolr.delete_by_query("id:#{doc.solr_id_value}")
           end
         else
@@ -74,7 +74,7 @@ module Solrsan
       end
 
       def destroy_all_index_documents!
-        self.perform_solr_command do |rsolr|
+        self.perform_solr_command(:write) do |rsolr|
           rsolr.delete_by_query("type:#{class_name}")
         end
       end

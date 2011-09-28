@@ -12,12 +12,12 @@ module Solrsan
         to_s.underscore
       end
 
-      def solr
-         Solrsan::Config.instance.rsolr_object(@solr_server)
+      def solr(method = :read)
+         Solrsan::Config.instance.rsolr_object(@solr_server, method)
       end
         
-      def perform_solr_command
-        yield(solr)
+      def perform_solr_command(method = :read)
+        yield(solr(method))
         solr.commit
       end
 
