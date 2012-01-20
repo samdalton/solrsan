@@ -1,4 +1,5 @@
 source "http://rubygems.org"
 
-# Specify your gem's dependencies in solrsan.gemspec
-gemspec
+gem 'activesupport'
+gem 'activemodel'
+gem 'rsolr', '1.0.0'
